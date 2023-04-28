@@ -3,6 +3,7 @@ import io
 from tempfile import TemporaryFile
 import tempfile
 import datetime
+import pickle
 import time
 import numpy as np
 import socket
@@ -45,34 +46,57 @@ def activate_stream(client_socket, picture):
     # client_socket.sendall(out)
     # client_socket.shutdown(1)
 
-    ###v3
+    ###v3 it works fine but slowly
 
-    BUF = 4096
-    timestr = time.strftime("%Y%m%d_%H%M%S")
-    image_name = "client_" + time.strftime(timestr) + ".png"
-    cv2.imwrite(image_name, picture)
+    # BUF = 4096
+    # timestr = time.strftime("%Y%m%d_%H%M%S")
+    # image_name = "client_" + time.strftime(timestr) + ".png"
+    # cv2.imwrite(image_name, picture)
+    #
+    #
+    #
+    #
+    # fp = open(image_name, "rb")
+    #
+    # data = fp.read(BUF)
+    # while data:
+    #     client_socket.send(data)
+    #     data = fp.read(BUF)
+    # fp.close()
+    # print(image_name + " sended")
+    #
+    # client_socket.send(b" <END> ")
+    # os.remove(image_name)
+    #
+    # data = client_socket.recv(1024)
+    #
+    # print('Received from the server :', str(data.decode('ascii')))
+    # print(f'Server: {data.decode()}')
+    #
+    # return f'{data.decode()}'
 
 
-
-
-    fp = open(image_name, "rb")
-
-    data = fp.read(BUF)
-    while data:
-        client_socket.send(data)
-        data = fp.read(BUF)
-    fp.close()
-    print(image_name + " sended")
-
+    ###v4
+    data_string = pickle.dumps(picture)
+    # print(data_string)
+    # print(type(data_string))
+    print(len(data_string))
+    client_socket.send(data_string)
     client_socket.send(b" <END> ")
-    os.remove(image_name)
+    print('pickle send')
 
-    data = client_socket.recv(1024)
-
-    print('Received from the server :', str(data.decode('ascii')))
-    print(f'Server: {data.decode()}')
-
+    data = client_socket.recv(4096)
     return f'{data.decode()}'
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -136,13 +160,13 @@ class MainApp(MDApp):
             x = datetime.datetime.now()
             timestr = time.strftime("%Y%m%d_%H%M%S")
             image_name = time.strftime(timestr) + ".png"
-            cv2.imwrite("clients_dir/" + image_name, frame)
+            # cv2.imwrite("clients_dir/" + image_name, frame)
             print('took a picture!')
 
             self.label.text = activate_stream(self.client_socket, frame)
             print("hello")
             # os.remove("clients_dir/" + image_name)
-            sleep(1)
+
 
     def load_video(self, *args):
         ret, frame = self.capture.read()

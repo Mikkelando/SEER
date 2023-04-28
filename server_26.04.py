@@ -2,8 +2,10 @@ import io
 import socket
 import threading
 import os
+import pickle
 import time
 from PIL import Image
+import cv2
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
@@ -31,9 +33,11 @@ def ML(frame,model):
 
 
     # picture = Image.frombytes(mode='RGB', size =(1, len(frame)) , data=frame)
-    picture = frame.resize((224,224))
+    resizeImg = cv2.resize(frame, (224, 224))
 
-    picture = np.array(picture).reshape((1,224,224,3))
+    # picture = frame.resize((224,224))
+
+    picture = np.array(resizeImg).reshape((1,224,224,3))
 
     ans = model.predict(picture)
 
@@ -159,42 +163,65 @@ def handle_client(client_socket, model):
     # img = Image.fromarray(pixel_array_resized)
     # img.show()
 
-    ####v3 it works fine but slowly
-    BUF = 4096
+
+
+    # ####v3 it works fine but slowly
+    # BUF = 4096
+    # while True:
+    #
+    #     file_stream = io.BytesIO()
+    #     flag = 0
+    #     image_name = 'zeronulll'
+    #
+    #     recvfile = client_socket.recv(BUF)
+    #
+    #     while recvfile:
+    #         flag = 1
+    #         file_stream.write(recvfile)
+    #         recvfile = client_socket.recv(BUF)
+    #
+    #
+    #         if b" <END> " in recvfile:
+    #             timestr = time.strftime("%Y%m%d_%H%M%S")
+    #             image_name =time.strftime(timestr) + ".png"
+    #
+    #             break
+    #
+    #     if flag == 1:
+    #         image = Image.open(file_stream)
+    #         image.save("serv_" + image_name, format="PNG")
+    #
+    #
+    #     ###MLMLMLMLL
+    #
+    #
+    #     client_socket.send("ya_ustal".encode())
+
+    ###V4 with jsons
     while True:
-
-        file_stream = io.BytesIO()
-        flag = 0
-        image_name = 'zeronulll'
-
-        recvfile = client_socket.recv(BUF)
-
-        while recvfile:
-            flag = 1
-            file_stream.write(recvfile)
-            recvfile = client_socket.recv(BUF)
-
-
-            if b" <END> " in recvfile:
-                timestr = time.strftime("%Y%m%d_%H%M%S")
-                image_name =time.strftime(timestr) + ".png"
-
+        buf = b''
+        while True:
+            data = client_socket.recv(4096)
+            if b" <END> " in data:
+                buf += data
                 break
-
-        if flag == 1:
-            image = Image.open(file_stream)
-            image.save("serv_" + image_name, format="PNG")
-
-
-        ###MLMLMLMLL
-
-
-        client_socket.send("ya_ustal".encode())
-
-
-
-
-
+            buf += data
+        data_arr = pickle.loads(buf)
+        # print(data_arr)
+        print(data_arr.shape)
+        # img = Image.fromarray(data_arr[:,:,0], 'RGB')
+        # img.save('l1.png', format='PNG')
+        # img = Image.fromarray(data_arr[:, :, 1], 'RGB')
+        # img.save('l2.png', format='PNG')
+        # img = Image.fromarray(data_arr[:, :, 2], 'RGB')
+        # img.save('l3.png', format='PNG')
+        # r = data_arr[:,:,0]
+        # data_arr[:,:,0] = data_arr[:,:,2]
+        # data_arr[:,:,2] = r
+        # img = Image.fromarray(data_arr, mode="")
+        # img.show()
+        client_socket.sendall(str(ML(data_arr, model)).encode('utf-8'))
+        print('obj send')
 
 
 
